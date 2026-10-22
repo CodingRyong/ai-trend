@@ -1,5 +1,5 @@
 """AI 트렌드 수집기: 소스 5개 -> docs/data.json. 표준 라이브러리만 사용."""
-import json, os, re, time
+import html, json, os, re, time
 import urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
@@ -55,14 +55,14 @@ def youtube():
 
 
 def github():
-    # shortcut: 공식 API엔 트렌딩이 없어 "최근 2주 생성 + 스타순"으로 근사. 부족하면 mshibanami GitHubTrendingRSS 추가
-    q = f'llm OR ai OR agent OR "machine learning" created:>{days_ago(14)[:10]}'
-    url = "https://api.github.com/search/repositories?" + urllib.parse.urlencode(
-        {"q": q, "sort": "stars", "order": "desc", "per_page": 30})
-    # 비인증 호출(분당 10회면 충분). Actions의 GITHUB_TOKEN은 앱 설치 토큰이라 검색 결과가 비어 나온다
-    return [item(r["full_name"], r["html_url"], r["stargazers_count"],
-                 " · ".join(filter(None, [r.get("language"), (r.get("description") or "")[:120]])), r["created_at"])
-            for r in get_json(url)["items"]]
+    # GitHub Trending 비공식 RSS(정적 Pages라 인증·rate limit 없음). Search API는 Actions에서 토큰 있으면 0건, 없으면 403이었다.
+    # shortcut: 피드에 스타 수·날짜가 없음, 필요하면 PAT 시크릿 + Search API로 교체
+    out = []
+    for it in ET.fromstring(get("https://mshibanami.github.io/GitHubTrendingRSS/daily/all.xml")).findall("./channel/item"):
+        m = re.search(r"<p>(.*?)</p>", it.findtext("description") or "", re.S)
+        desc = html.unescape(re.sub(r"<[^>]+>", "", m.group(1))).strip() if m else ""
+        out.append(item(it.findtext("title"), it.findtext("link"), None, desc[:120], ""))
+    return out
 
 
 def hf_papers():
@@ -100,7 +100,7 @@ def geeknews():
     return out[:30]
 
 
-SOURCES = [("youtube", "YouTube", "조회수", youtube), ("github", "GitHub", "★", github),
+SOURCES = [("youtube", "YouTube", "조회수", youtube), ("github", "GitHub", "", github),
            ("hf", "HF Papers", "👍", hf_papers), ("hn", "Hacker News", "pt", hackernews),
            ("geeknews", "GeekNews", "", geeknews)]
 
