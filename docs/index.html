@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 트렌드</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<meta name="theme-color" content="#111827">
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#111827;--muted:#6b7280;--accent:#2563eb;--line:#e5e7eb}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#1a1d24;--fg:#e5e7eb;--muted:#9ca3af;--accent:#60a5fa;--line:#2a2f3a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+header{padding:16px 16px 8px;max-width:760px;margin:0 auto}
+h1{font-size:20px;margin:0}
+#meta{color:var(--muted);font-size:13px}
+nav{display:flex;gap:6px;overflow-x:auto;padding:8px 16px;max-width:760px;margin:0 auto;position:sticky;top:0;background:var(--bg)}
+nav button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--fg);padding:6px 12px;border-radius:999px;font-size:14px;cursor:pointer}
+nav button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+main{max-width:760px;margin:0 auto;padding:0 16px 32px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:8px}
+.card a{color:var(--fg);text-decoration:none;font-weight:600}
+.card a:hover{color:var(--accent)}
+.score{color:var(--accent);font-size:13px;font-weight:600;margin-right:8px;white-space:nowrap}
+.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.err{color:#dc2626}
+</style>
+</head>
+<body>
+<header><h1>AI 트렌드</h1><div id="meta">불러오는 중…</div></header>
+<nav id="tabs"></nav>
+<main id="list"></main>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = n => n >= 1e4 ? (n / 1e4).toFixed(1) + '만' : String(n);
+const ago = iso => { const h = (Date.now() - new Date(iso)) / 36e5; return h < 1 ? '방금' : h < 24 ? Math.floor(h) + '시간 전' : Math.floor(h / 24) + '일 전'; };
+let cur; try { cur = localStorage.getItem('tab'); } catch {}
+
+fetch('data.json?t=' + Date.now()).then(r => r.json()).then(d => {
+  $('#meta').textContent = '업데이트: ' + new Date(d.generated_at).toLocaleString('ko-KR');
+  if (!d.sources.some(s => s.key === cur)) cur = d.sources[0].key;
+  $('#tabs').innerHTML = d.sources.map(s => `<button data-k="${s.key}">${esc(s.name)}</button>`).join('');
+  const show = () => {
+    document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.k === cur));
+    const s = d.sources.find(x => x.key === cur);
+    $('#list').innerHTML = s.error ? `<p class="err">수집 실패: ${esc(s.error)}</p>` : s.items.map(i => `<div class="card">
+      ${i.score != null ? `<span class="score">${fmt(i.score)} ${esc(s.unit)}</span>` : ''}<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.title)}</a>
+      <div class="sub">${esc(i.meta)}${i.meta && i.published ? ' · ' : ''}${i.published ? ago(i.published) : ''}</div></div>`).join('') || '<p class="sub">항목 없음</p>';
+  };
+  $('#tabs').onclick = e => { if (e.target.dataset.k) { cur = e.target.dataset.k; try { localStorage.setItem('tab', cur); } catch {} show(); } };
+  show();
+}).catch(e => $('#meta').textContent = 'data.json 로드 실패: ' + e);
+</script>
+</body>
+</html>
