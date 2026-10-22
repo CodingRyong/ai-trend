@@ -36,7 +36,9 @@ def _secs(iso):  # ISO 8601 "PT1H2M3S" -> 초. 라이브(P0D) 등 비정형은 0
 
 
 def youtube():
-    key = os.environ["YOUTUBE_API_KEY"]
+    key = os.environ.get("YOUTUBE_API_KEY")
+    if not key:
+        raise RuntimeError("YOUTUBE_API_KEY secret not set")
     base = "https://www.googleapis.com/youtube/v3/"
     q = urllib.parse.urlencode({"part": "snippet", "type": "video", "q": "AI|LLM", "order": "viewCount",
                                 "publishedAfter": days_ago(7), "maxResults": 50, "key": key})
@@ -57,10 +59,10 @@ def github():
     q = f'llm OR ai OR agent OR "machine learning" created:>{days_ago(14)[:10]}'
     url = "https://api.github.com/search/repositories?" + urllib.parse.urlencode(
         {"q": q, "sort": "stars", "order": "desc", "per_page": 30})
-    h = {"Authorization": "Bearer " + os.environ["GITHUB_TOKEN"]} if os.environ.get("GITHUB_TOKEN") else {}
+    # 비인증 호출(분당 10회면 충분). Actions의 GITHUB_TOKEN은 앱 설치 토큰이라 검색 결과가 비어 나온다
     return [item(r["full_name"], r["html_url"], r["stargazers_count"],
                  " · ".join(filter(None, [r.get("language"), (r.get("description") or "")[:120]])), r["created_at"])
-            for r in get_json(url, h)["items"]]
+            for r in get_json(url)["items"]]
 
 
 def hf_papers():
@@ -111,11 +113,12 @@ def main():
         except Exception as e:  # 한 소스가 죽어도 나머지는 저장
             data["sources"].append({"key": key, "name": name, "unit": unit, "items": [], "error": f"{type(e).__name__}: {e}"})
         s = data["sources"][-1]
+        if not s["items"]:
+            s.setdefault("error", "0 items returned")
         print(f"{name}: {len(s['items'])} items {s.get('error', '')}")
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=1)
-    ok = [s for s in data["sources"] if not s.get("error")]
-    assert len(ok) >= 3 and all(s["items"] for s in ok), "too few sources returned data"
+    assert sum(bool(s["items"]) for s in data["sources"]) >= 3, "too few sources returned data"
 
 
 if __name__ == "__main__":
