@@ -136,7 +136,8 @@ def geeknews():
 
 
 HANGUL = re.compile(r"[가-힣]")
-META_KO = {"github", "hf"}  # meta를 번역할 소스. YouTube meta는 채널명, HN은 "N comments · author"라 번역 안 함
+# 소스별 번역할 필드. GitHub 제목은 저장소 이름, YouTube meta는 채널명, HN meta는 "N comments · author"라 번역 안 함
+TRANSLATE = {"youtube": ("title",), "github": ("meta",), "hf": ("title", "meta"), "hn": ("title",), "geeknews": ("title",)}
 
 
 def translate(data):
@@ -144,8 +145,8 @@ def translate(data):
     key = os.environ.get("GEMINI_API_KEY")
     if not key:
         raise RuntimeError("GEMINI_API_KEY secret not set")
-    todo = [(i, k) for s in data["sources"] for i in s["items"] for k in ("title", "meta")
-            if (k == "title" or s["key"] in META_KO) and i[k] and not HANGUL.search(i[k])]
+    todo = [(i, k) for s in data["sources"] for i in s["items"] for k in TRANSLATE[s["key"]]
+            if i[k] and not HANGUL.search(i[k])]
     for n in range(0, len(todo), 60):  # 한 번에 너무 많으면 길이 불일치가 잦다
         chunk = todo[n:n + 60]
         prompt = ("다음 JSON 문자열 배열을 자연스러운 한국어로 번역해, 같은 길이·같은 순서의 JSON 문자열 배열만 출력하라. "
@@ -159,7 +160,8 @@ def translate(data):
         if len(out) != len(chunk):
             raise ValueError(f"translation length mismatch: {len(out)} != {len(chunk)}")
         for (i, k), ko in zip(chunk, out):
-            i[k + "_ko"] = ko
+            if ko and ko != i[k]:  # 원문 그대로면 중복 표시하지 않는다
+                i[k + "_ko"] = ko
 
 
 SOURCES = [("youtube", "YouTube", "조회수", youtube), ("github", "GitHub", "", github),
