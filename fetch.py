@@ -40,13 +40,14 @@ def youtube():
     if not key:
         raise RuntimeError("YOUTUBE_API_KEY secret not set")
     base = "https://www.googleapis.com/youtube/v3/"
-    q = urllib.parse.urlencode({"part": "snippet", "type": "video", "q": "AI|LLM", "order": "viewCount",
-                                "publishedAfter": days_ago(7), "maxResults": 50, "key": key})
+    # videoCategoryId 28 = 과학·기술. 전체 카테고리로 조회수순을 뽑으면 예능·밈 영상이 상위를 차지한다
+    q = urllib.parse.urlencode({"part": "snippet", "type": "video", "q": "AI|LLM -shorts", "order": "viewCount",
+                                "videoCategoryId": "28", "publishedAfter": days_ago(7), "maxResults": 50, "key": key})
     ids = [x["id"]["videoId"] for x in get_json(base + "search?" + q)["items"]]
     q = urllib.parse.urlencode({"part": "snippet,statistics,contentDetails", "id": ",".join(ids), "key": key})
     out = []
     for v in get_json(base + "videos?" + q)["items"]:
-        if _secs(v["contentDetails"]["duration"]) < 60:  # 쇼츠·라이브 제외
+        if _secs(v["contentDetails"]["duration"]) < 180:  # 쇼츠(최대 3분)·라이브 제외
             continue
         out.append(item(v["snippet"]["title"], "https://www.youtube.com/watch?v=" + v["id"],
                         int(v["statistics"].get("viewCount", 0)), v["snippet"]["channelTitle"],
