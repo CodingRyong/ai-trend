@@ -6,52 +6,105 @@
 <title>AI 트렌드</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
-<meta name="theme-color" content="#111827">
+<meta name="theme-color" content="#1F4FD8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
-:root{--bg:#f6f7f9;--card:#fff;--fg:#111827;--muted:#6b7280;--accent:#2563eb;--line:#e5e7eb}
-@media(prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#1a1d24;--fg:#e5e7eb;--muted:#9ca3af;--accent:#60a5fa;--line:#2a2f3a}}
+:root{--bg:#F3F5F8;--fg:#14213D;--muted:#5B6578;--faint:#9AA3B2;--line:#DDE2EA;--accent:#1F4FD8;--wash:#E4ECFF;--thumb:#D9DEE7}
+@media(prefers-color-scheme:dark){:root{--bg:#0E1420;--fg:#E6EAF2;--muted:#9AA6BA;--faint:#5F6B80;--line:#1F2838;--accent:#7FA2FF;--wash:#182542;--thumb:#1C2535}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
-header{padding:16px 16px 8px;max-width:760px;margin:0 auto}
-h1{font-size:20px;margin:0}
-#meta{color:var(--muted);font-size:13px}
-nav{display:flex;gap:6px;overflow-x:auto;padding:8px 16px;max-width:760px;margin:0 auto;position:sticky;top:0;background:var(--bg)}
-nav button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--fg);padding:6px 12px;border-radius:999px;font-size:14px;cursor:pointer}
-nav button.on{background:var(--accent);border-color:var(--accent);color:#fff}
-main{max-width:760px;margin:0 auto;padding:0 16px 32px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:8px}
-.card a{color:var(--fg);text-decoration:none;font-weight:600}
-.card a:hover{color:var(--accent)}
-.score{color:var(--accent);font-size:13px;font-weight:600;margin-right:8px;white-space:nowrap}
-.sub{color:var(--muted);font-size:13px;margin-top:4px}
-.err{color:#dc2626}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.5;font-variant-numeric:tabular-nums}
+a{color:inherit;text-decoration:none}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px}
+header{padding:28px 0 10px}
+h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+#meta{margin:6px 0 0;color:var(--muted);font-size:14px}
+#meta .warn{color:#C2410C}
+nav{position:sticky;top:0;z-index:1;background:var(--bg);padding:10px 0 2px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:none;border:0;background:none;color:var(--muted);font:inherit;font-size:15px;font-weight:600;padding:8px 10px;border-radius:8px;cursor:pointer}
+nav button small{font-weight:500;color:var(--faint);margin-left:4px}
+nav button.on{color:var(--accent);background:var(--wash)}
+nav button.on small{color:var(--accent)}
+main{padding:4px 0 48px}
+.row{display:grid;grid-template-columns:72px 1fr auto;gap:8px 14px;padding:16px 0;border-top:1px solid var(--line);align-items:start}
+.row:first-child{border-top:0}
+.num{text-align:right;line-height:1.1;white-space:nowrap}
+.num b{display:block;font-size:22px;font-weight:800;color:var(--accent);letter-spacing:-.03em}
+.num span{font-size:12px;color:var(--faint)}
+.num.rank{font-size:20px;font-weight:600;color:var(--faint);padding-top:2px}
+.body{min-width:0}
+.t{display:block;font-size:17px;font-weight:650;line-height:1.35;word-break:keep-all;overflow-wrap:anywhere}
+.t:hover{color:var(--accent)}
+.orig{margin:2px 0 0;font-size:13px;color:var(--muted);line-height:1.4}
+.desc{margin:4px 0 0;font-size:14px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sub{margin:4px 0 0;display:flex;flex-wrap:wrap;gap:0 12px;font-size:13px;color:var(--faint)}
+.thumb{width:96px;aspect-ratio:16/9;object-fit:cover;border-radius:6px;background:var(--thumb)}
+.thumb.avatar{width:40px;aspect-ratio:1;border-radius:50%}
+.lead{padding-top:8px}
+.lead .thumb{grid-column:2/4;grid-row:1;width:100%;max-height:300px;border-radius:10px}
+.lead .thumb.avatar{width:56px}
+.lead .num{grid-row:2}
+.lead .body{grid-column:2/4;grid-row:2}
+.lead .t{font-size:22px;line-height:1.3}
+.err{color:#C2410C;padding:16px 0}
+.empty{color:var(--faint);padding:24px 0}
+@media(max-width:480px){
+  h1{font-size:26px}
+  .row{grid-template-columns:56px 1fr auto;gap:6px 12px}
+  .num b{font-size:19px}
+  .thumb{width:80px}
+  .t{font-size:16px}.lead .t{font-size:20px}
+}
 </style>
 </head>
 <body>
-<header><h1>AI 트렌드</h1><div id="meta">불러오는 중…</div></header>
-<nav id="tabs"></nav>
+<div class="wrap">
+<header><h1>AI 트렌드</h1><p id="meta">불러오는 중</p></header>
+<nav id="tabs" role="tablist"></nav>
 <main id="list"></main>
+</div>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const fmt = n => n >= 1e4 ? (n / 1e4).toFixed(1) + '만' : String(n);
+const fmt = n => n >= 1e8 ? (n / 1e8).toFixed(1) + '억' : n >= 1e4 ? Math.round(n / 1e4) + '만' : String(n);
 const ago = iso => { const h = (Date.now() - new Date(iso)) / 36e5; return h < 1 ? '방금' : h < 24 ? Math.floor(h) + '시간 전' : Math.floor(h / 24) + '일 전'; };
+const UNIT = { youtube: '조회', hf: '추천', hn: '포인트' };
+const thumbOf = (key, i) => {
+  if (key === 'youtube') { const id = (i.url.match(/v=([\w-]{11})/) || [])[1]; return id && `https://i.ytimg.com/vi/${id}/mqdefault.jpg`; }
+  if (key === 'github') { const owner = i.title.split('/')[0]; return owner && `https://github.com/${esc(owner)}.png?size=112`; }
+};
 let cur; try { cur = localStorage.getItem('tab'); } catch {}
 
 fetch('data.json?t=' + Date.now()).then(r => r.json()).then(d => {
-  $('#meta').textContent = '업데이트: ' + new Date(d.generated_at).toLocaleString('ko-KR') + (d.translate_error ? ' · 번역 안 됨: ' + d.translate_error : '');
+  const when = new Date(d.generated_at).toLocaleString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' });
+  $('#meta').innerHTML = esc(when) + ' 기준, 8시간마다 갱신됩니다.' + (d.translate_error ? ` <span class="warn">지금은 번역이 안 된 상태입니다: ${esc(d.translate_error)}</span>` : '');
   if (!d.sources.some(s => s.key === cur)) cur = d.sources[0].key;
-  $('#tabs').innerHTML = d.sources.map(s => `<button data-k="${s.key}">${esc(s.name)}</button>`).join('');
+  $('#tabs').innerHTML = d.sources.map(s => `<button role="tab" data-k="${s.key}">${esc(s.name)}<small>${s.items.length}</small></button>`).join('');
   const show = () => {
-    document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.k === cur));
+    document.querySelectorAll('#tabs button').forEach(b => { const on = b.dataset.k === cur; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
     const s = d.sources.find(x => x.key === cur);
-    $('#list').innerHTML = s.error ? `<p class="err">수집 실패: ${esc(s.error)}</p>` : s.items.map(i => `<div class="card">
-      ${i.score != null ? `<span class="score">${fmt(i.score)} ${esc(s.unit)}</span>` : ''}<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.title_ko || i.title)}</a>
-      <div class="sub">${i.title_ko ? esc(i.title) + '<br>' : ''}${esc(i.meta_ko || i.meta)}${i.meta && i.published ? ' · ' : ''}${i.published ? ago(i.published) : ''}</div></div>`).join('') || '<p class="sub">항목 없음</p>';
+    if (s.error) { $('#list').innerHTML = `<p class="err">이 소스를 가져오지 못했습니다. 다음 갱신 때 다시 시도합니다. (${esc(s.error)})</p>`; return; }
+    const long = s.key === 'hf' || s.key === 'github';
+    $('#list').innerHTML = s.items.map((i, n) => {
+      const img = thumbOf(s.key, i);
+      const num = i.score != null ? `<div class="num"><b>${fmt(i.score)}</b><span>${UNIT[s.key] || ''}</span></div>` : `<div class="num rank">${n + 1}</div>`;
+      const meta = i.meta_ko || i.meta;
+      const sub = long ? (meta ? `<p class="desc">${esc(meta)}</p>` : '') : '';
+      const tail = [...(long ? [] : (meta || '').split(' · ')), i.published ? ago(i.published) : ''].filter(Boolean);
+      return `<article class="row${n === 0 ? ' lead' : ''}">${num}<div class="body">
+        <a class="t" href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.title_ko || i.title)}</a>
+        ${i.title_ko ? `<p class="orig">${esc(i.title)}</p>` : ''}${sub}
+        ${tail.length ? `<p class="sub">${tail.map(t => `<span>${esc(t)}</span>`).join('')}</p>` : ''}</div>
+        ${img ? `<img class="thumb${s.key === 'github' ? ' avatar' : ''}" src="${img}" alt="" loading="lazy">` : ''}
+      </article>`;
+    }).join('') || '<p class="empty">아직 올라온 항목이 없습니다.</p>';
+    window.scrollTo(0, 0);
   };
-  $('#tabs').onclick = e => { if (e.target.dataset.k) { cur = e.target.dataset.k; try { localStorage.setItem('tab', cur); } catch {} show(); } };
+  $('#tabs').onclick = e => { const b = e.target.closest('button'); if (b) { cur = b.dataset.k; try { localStorage.setItem('tab', cur); } catch {} show(); } };
   show();
-}).catch(e => $('#meta').textContent = 'data.json 로드 실패: ' + e);
+}).catch(e => $('#meta').textContent = '데이터를 불러오지 못했습니다. 새로고침해 보세요. (' + e + ')');
 </script>
 </body>
 </html>
