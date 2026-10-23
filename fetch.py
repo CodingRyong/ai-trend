@@ -147,18 +147,24 @@ def translate(data):
         raise RuntimeError("GEMINI_API_KEY secret not set")
     todo = [(i, k) for s in data["sources"] for i in s["items"] for k in TRANSLATE[s["key"]]
             if i[k] and not HANGUL.search(i[k])]
-    for n in range(0, len(todo), 60):  # 한 번에 너무 많으면 길이 불일치가 잦다
-        chunk = todo[n:n + 60]
+    for n in range(0, len(todo), 30):  # 묶음이 크면 느리고(타임아웃) 길이 불일치도 잦다
+        chunk = todo[n:n + 30]
         prompt = ("다음 JSON 문자열 배열을 자연스러운 한국어로 번역해, 같은 길이·같은 순서의 JSON 문자열 배열만 출력하라. "
                   "모델명·제품명·코드 식별자·사람 이름은 원문 그대로 둔다.\n" + json.dumps([i[k] for i, k in chunk], ensure_ascii=False))
         body = json.dumps({"contents": [{"parts": [{"text": prompt}]}],
                            "generationConfig": {"responseMimeType": "application/json", "temperature": 0.2}}).encode()
         req = urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
                                      data=body, headers={**UA, "Content-Type": "application/json", "x-goog-api-key": key})
-        with urllib.request.urlopen(req, timeout=120) as r:
-            out = json.loads(json.load(r)["candidates"][0]["content"]["parts"][0]["text"])
-        if len(out) != len(chunk):
-            raise ValueError(f"translation length mismatch: {len(out)} != {len(chunk)}")
+        for attempt in (1, 2):  # 타임아웃·길이 불일치는 한 번 더 시도
+            try:
+                with urllib.request.urlopen(req, timeout=240) as r:
+                    out = json.loads(json.load(r)["candidates"][0]["content"]["parts"][0]["text"])
+                if len(out) != len(chunk):
+                    raise ValueError(f"translation length mismatch: {len(out)} != {len(chunk)}")
+                break
+            except Exception:
+                if attempt == 2:
+                    raise
         for (i, k), ko in zip(chunk, out):
             if ko and ko != i[k]:  # 원문 그대로면 중복 표시하지 않는다
                 i[k + "_ko"] = ko
