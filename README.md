@@ -1,19 +1,27 @@
 # AI 트렌드
 
-YouTube · GitHub · Hugging Face Papers · Hacker News · GeekNews에서 핫한 AI 콘텐츠를 모아 보는 정적 사이트.
+AI 공부 채널 36개의 YouTube 영상 · GitHub Trending · Hugging Face Papers · Hacker News · GeekNews를 한 페이지에서 보는 정적 사이트.
 GitHub Actions가 8시간마다 `fetch.py`를 실행해 `docs/data.json`을 만들고 GitHub Pages로 배포한다.
+제목·설명은 Gemini로 한국어 번역해 원문과 함께 보여준다.
 
-## 처음 한 번 설정
+사이트: https://codingryong.github.io/ai-trend/
 
-1. GitHub에 저장소를 만들고 이 폴더를 `main` 브랜치로 푸시 (무료 Pages는 공개 저장소 필요)
-2. Settings → Secrets and variables → Actions → `YOUTUBE_API_KEY` 등록 (YouTube Data API v3 키)
-3. Settings → Pages → Source를 **GitHub Actions**로 변경
-4. Actions 탭에서 `fetch` 워크플로를 한 번 수동 실행(Run workflow) → 사이트 주소는 워크플로 결과에 표시
+## 설정
+
+1. 저장소 Settings → Secrets and variables → Actions → `GEMINI_API_KEY` 등록
+   (https://aistudio.google.com/apikey 에서 결제 없이 발급. 없으면 번역만 빠지고 나머지는 동작)
+2. Settings → Pages → Source가 **GitHub Actions**인지 확인
+3. Actions 탭에서 `fetch` 워크플로를 수동 실행(Run workflow)하면 바로 반영
+
+YouTube는 채널 RSS를 쓰므로 API 키가 필요 없다.
+
+## 채널 추가·삭제
+
+`fetch.py`의 `CHANNELS`를 고친다. 채널 ID는 유튜브 채널 페이지 → 정보 → 공유 → **채널 ID 복사**.
 
 ## 로컬 실행
 
 ```bash
-set YOUTUBE_API_KEY=...   # 없으면 YouTube 탭만 실패로 표시됨
 python fetch.py
 python -m http.server 8123 -d docs
 ```

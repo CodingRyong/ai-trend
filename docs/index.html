@@ -39,15 +39,15 @@ const ago = iso => { const h = (Date.now() - new Date(iso)) / 36e5; return h < 1
 let cur; try { cur = localStorage.getItem('tab'); } catch {}
 
 fetch('data.json?t=' + Date.now()).then(r => r.json()).then(d => {
-  $('#meta').textContent = '업데이트: ' + new Date(d.generated_at).toLocaleString('ko-KR');
+  $('#meta').textContent = '업데이트: ' + new Date(d.generated_at).toLocaleString('ko-KR') + (d.translate_error ? ' · 번역 안 됨: ' + d.translate_error : '');
   if (!d.sources.some(s => s.key === cur)) cur = d.sources[0].key;
   $('#tabs').innerHTML = d.sources.map(s => `<button data-k="${s.key}">${esc(s.name)}</button>`).join('');
   const show = () => {
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.k === cur));
     const s = d.sources.find(x => x.key === cur);
     $('#list').innerHTML = s.error ? `<p class="err">수집 실패: ${esc(s.error)}</p>` : s.items.map(i => `<div class="card">
-      ${i.score != null ? `<span class="score">${fmt(i.score)} ${esc(s.unit)}</span>` : ''}<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.title)}</a>
-      <div class="sub">${esc(i.meta)}${i.meta && i.published ? ' · ' : ''}${i.published ? ago(i.published) : ''}</div></div>`).join('') || '<p class="sub">항목 없음</p>';
+      ${i.score != null ? `<span class="score">${fmt(i.score)} ${esc(s.unit)}</span>` : ''}<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.title_ko || i.title)}</a>
+      <div class="sub">${i.title_ko ? esc(i.title) + '<br>' : ''}${esc(i.meta_ko || i.meta)}${i.meta && i.published ? ' · ' : ''}${i.published ? ago(i.published) : ''}</div></div>`).join('') || '<p class="sub">항목 없음</p>';
   };
   $('#tabs').onclick = e => { if (e.target.dataset.k) { cur = e.target.dataset.k; try { localStorage.setItem('tab', cur); } catch {} show(); } };
   show();
