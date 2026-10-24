@@ -76,8 +76,10 @@ const thumbOf = (key, i) => {
   if (key === 'github') { const owner = i.title.split('/')[0]; return owner && `https://github.com/${esc(owner)}.png?size=112`; }
 };
 let cur; try { cur = localStorage.getItem('tab'); } catch {}
+let loadedAt = 0;
 
-fetch('data.json?t=' + Date.now()).then(r => r.json()).then(d => {
+const load = () => fetch('data.json?t=' + Date.now()).then(r => r.json()).then(d => {
+  loadedAt = Date.now();
   const when = new Date(d.generated_at).toLocaleString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' });
   $('#meta').innerHTML = esc(when) + ' 기준, 8시간마다 갱신됩니다.' + (d.translate_error ? ` <span class="warn">지금은 번역이 안 된 상태입니다: ${esc(d.translate_error)}</span>` : '');
   if (!d.sources.some(s => s.key === cur)) cur = d.sources[0].key;
@@ -105,6 +107,13 @@ fetch('data.json?t=' + Date.now()).then(r => r.json()).then(d => {
   $('#tabs').onclick = e => { const b = e.target.closest('button'); if (b) { cur = b.dataset.k; try { localStorage.setItem('tab', cur); } catch {} show(); } };
   show();
 }).catch(e => $('#meta').textContent = '데이터를 불러오지 못했습니다. 새로고침해 보세요. (' + e + ')');
+
+load();
+// 창을 계속 띄워 둬도 최신으로: 30분 넘게 지난 데이터는 창이 다시 보일 때와 1시간마다 다시 불러온다
+const fresh = () => { if (!document.hidden && Date.now() - loadedAt > 30 * 60 * 1000) load(); };
+document.addEventListener('visibilitychange', fresh);
+addEventListener('focus', fresh);
+setInterval(fresh, 60 * 60 * 1000);
 </script>
 </body>
 </html>
