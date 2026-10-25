@@ -52,9 +52,13 @@ nav{position:sticky;top:0;z-index:2;margin:0 -20px;padding:8px 20px;background:c
 .tab .count{font-size:13px;font-weight:500;color:var(--ink-3)}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:inset 0 -2px 0 var(--c)}
 .tab[aria-selected="true"] .count{color:var(--ink-2)}
+.tab.mine{margin-left:auto}
+.tab.mine + .tab.mine{margin-left:0}
 
 main{padding:20px 0 64px;min-height:60vh}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.intro{max-width:780px;margin:0 0 8px;font-size:14px;color:var(--ink-3)}
+h2.section{margin:40px 0 4px;font-size:18px;font-weight:700}
+h2.section:first-child{margin-top:0}
 
 /* YouTube 격자 */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:28px 20px}
@@ -73,23 +77,39 @@ main{padding:20px 0 64px;min-height:60vh}
 .lead b{font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
 .lead svg{width:16px;height:16px;color:var(--c)}
 .lead .rank{font-size:17px;font-weight:600;color:var(--ink-3)}
+.lead .src{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--surface);border:1px solid var(--line);color:var(--c)}
+.lead .src svg{width:18px;height:18px}
 .avatar{width:44px;height:44px;border-radius:50%;background:var(--skeleton);object-fit:cover}
 
 /* 공통 글자 */
 .t{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:17px;font-weight:650;line-height:1.4;letter-spacing:-.01em}
-a.t:hover,.shot:hover+div .t{color:var(--accent)}
+a.t:hover{color:var(--accent)}
 .orig{margin:2px 0 0;font-size:13px;line-height:1.45;color:var(--ink-3);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
 .desc{margin:6px 0 0;font-size:15px;line-height:1.55;color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.meta{margin:6px 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;font-size:13px;color:var(--ink-3)}
+.meta{margin:6px 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;min-height:24px;font-size:13px;color:var(--ink-3)}
 .owner{font-weight:500;color:var(--ink-3)}
-.new{padding:1px 6px;border-radius:4px;background:var(--accent-wash);color:var(--accent);font-size:12px;font-weight:700}
+.tag{padding:1px 6px;border-radius:4px;font-size:12px;font-weight:700}
+.new{background:var(--accent-wash);color:var(--accent)}
+.why{color:var(--accent);font-weight:600}
+.seen-tag{display:none;background:var(--skeleton);color:var(--ink-3)}
+.seen .seen-tag{display:inline}
+.seen .t{color:var(--ink-3)}
+.seen .shot img{opacity:.55}
+
+/* 보관 버튼: 보이는 아이콘은 작게, 누르는 영역은 44px */
+.save{display:grid;place-items:center;width:44px;height:44px;margin:-10px -12px -10px auto;border:0;border-radius:var(--r-md);background:none;color:var(--ink-3);transition:color .15s,background .15s}
+.save:hover{color:var(--accent);background:var(--accent-wash)}
+.save[aria-pressed="true"]{color:var(--accent)}
+.save[aria-pressed="true"] svg{fill:currentColor}
 
 /* 상태 */
-.state{max-width:520px;padding:48px 0;color:var(--ink-2)}
+.state{max-width:520px;padding:40px 0;color:var(--ink-2)}
 .state h2{margin:0 0 6px;font-size:18px;color:var(--ink)}
 .state p{margin:0;font-size:15px}
 .state small{display:block;margin-top:10px;color:var(--ink-3);font-size:12px}
 .sk{background:var(--skeleton);border-radius:var(--r-sm)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);opacity:0;padding:10px 16px;border-radius:var(--r-md);background:var(--ink);color:var(--bg);font-size:14px;font-weight:600;pointer-events:none;transition:opacity .2s,transform .2s}
+.toast.on{opacity:1;transform:translate(-50%,0)}
 
 @media (max-width:560px){
   .wrap{padding:0 16px}
@@ -100,7 +120,9 @@ a.t:hover,.shot:hover+div .t{color:var(--accent)}
   .refresh{padding:0 12px}
   .row{grid-template-columns:44px 1fr;gap:4px 12px}
   .avatar{width:40px;height:40px}
+  .lead .src{width:36px;height:36px}
   .t{font-size:16px}
+  .tab.mine{margin-left:0}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -117,8 +139,8 @@ a.t:hover,.shot:hover+div .t{color:var(--accent)}
     </button>
   </header>
   <div id="notice"></div>
-  <nav aria-label="소스"><div class="tabs" id="tabs" role="tablist"></div></nav>
-  <main id="list" role="tabpanel" aria-live="polite">
+  <nav aria-label="보기"><div class="tabs" id="tabs" role="tablist"></div></nav>
+  <main id="list" role="tabpanel">
     <div class="grid" aria-hidden="true">
       <div><div class="sk" style="aspect-ratio:16/9"></div><div class="sk" style="height:18px;margin-top:12px;width:85%"></div><div class="sk" style="height:14px;margin-top:8px;width:50%"></div></div>
       <div><div class="sk" style="aspect-ratio:16/9"></div><div class="sk" style="height:18px;margin-top:12px;width:75%"></div><div class="sk" style="height:14px;margin-top:8px;width:45%"></div></div>
@@ -126,6 +148,7 @@ a.t:hover,.shot:hover+div .t{color:var(--accent)}
     </div>
   </main>
 </div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -134,73 +157,150 @@ const hoursAgo = iso => (Date.now() - new Date(iso)) / 36e5;
 const ago = iso => { const h = hoursAgo(iso); return h < 1 ? '방금' : h < 24 ? Math.floor(h) + '시간 전' : h < 48 ? '어제' : Math.floor(h / 24) + '일 전'; };
 const dur = s => { const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = String(s % 60).padStart(2, '0'); return h ? `${h}:${String(m).padStart(2, '0')}:${x}` : `${m}:${x}`; };
 const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
-const isNew = i => i.published && hoursAgo(i.published) < 24 ? '<span class="new">새 글</span>' : '';
 const icon = p => `<svg viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
 
-// 소스별 이름·색·아이콘·단위. 표시 이름은 한국어 사용자 기준으로 바꾼다.
+// 기록은 이 브라우저에만 저장한다 (로그인 없음). 저장소가 막혀 있어도 화면은 동작한다.
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+let seen = store.get('seen', []);    // [{url,key,title,title_ko,meta,meta_ko,at}] 최근 본 순
+let saved = store.get('saved', []);  // [{...항목, key, savedAt}] 최근 보관 순
+const isSeen = u => seen.some(s => s.url === u);
+const isSaved = u => saved.some(s => s.url === u);
+const snap = (i, key) => ({ key, url: i.url, title: i.title, title_ko: i.title_ko, meta: i.meta, meta_ko: i.meta_ko, score: i.score, published: i.published, duration: i.duration });
+
 const SRC = {
   youtube:  { label: 'YouTube',     c: 'var(--yt)', icon: '<rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z"/>' },
   github:   { label: 'GitHub',      c: 'var(--gh)', icon: '<circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="8" r="2"/><path d="M6 8v8M18 10a6 6 0 0 1-6 6H8"/>' },
-  hf:       { label: 'AI 논문',      c: 'var(--hf)', icon: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>', unit: '추천' },
-  hn:       { label: 'Hacker News', c: 'var(--hn)', icon: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>', unit: '포인트' },
+  hf:       { label: 'AI 논문',      c: 'var(--hf)', icon: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>' },
+  hn:       { label: 'Hacker News', c: 'var(--hn)', icon: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>' },
   geeknews: { label: 'GeekNews',    c: 'var(--gn)', icon: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>' },
 };
+const MINE = {
+  rec:   { label: '추천',   c: 'var(--accent)', icon: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>' },
+  saved: { label: '보관함', c: 'var(--accent)', icon: '<path d="M6 3h12v18l-6-4-6 4z"/>' },
+};
 const UP = '<path d="m12 5-7 8h4v6h6v-6h4z"/>';
+const BOOKMARK = '<path d="M6 3h12v18l-6-4-6 4z"/>';
 
-const titleBlock = i => `<a class="t" href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.title_ko || i.title)}</a>${i.title_ko ? `<p class="orig" lang="en">${esc(i.title)}</p>` : ''}`;
+// 항목 공통 조각
+const link = (i, cls, inner, extra = '') => `<a class="${cls}" href="${esc(i.url)}" target="_blank" rel="noopener" data-u="${esc(i.url)}"${extra}>${inner}</a>`;
+const titleBlock = i => link(i, 't', esc(i.title_ko || i.title)) + (i.title_ko ? `<p class="orig" lang="en">${esc(i.title)}</p>` : '');
+const newTag = i => i.published && hoursAgo(i.published) < 24 ? '<span class="tag new">새 글</span>' : '';
+const saveBtn = (i, key) => { const on = isSaved(i.url); return `<button class="save" type="button" data-save="${esc(i.url)}" data-k="${key}" aria-pressed="${on}" aria-label="${on ? '보관함에서 빼기' : '보관함에 저장'}" title="${on ? '보관함에서 빼기' : '보관함에 저장'}">${icon(BOOKMARK)}</button>`; };
+const tail = (i, key) => `<span class="tag seen-tag">봤음</span>${saveBtn(i, key)}`;
+const item = (i, cls, inner) => `<${cls === 'video' ? 'article' : 'li'} class="${cls}${isSeen(i.url) ? ' seen' : ''}" data-item="${esc(i.url)}">${inner}</${cls === 'video' ? 'article' : 'li'}>`;
+const scoreText = (i, key) => i.score == null ? '' : key === 'youtube' ? `조회수 ${fmt(i.score)}회` : key === 'hf' ? `추천 ${fmt(i.score)}` : key === 'hn' ? `${fmt(i.score)}포인트` : '';
 
 const RENDER = {
-  youtube: items => `<div class="grid">${items.map(i => { const id = (i.url.match(/v=([\w-]{11})/) || [])[1]; return `
-    <article class="video">
-      <a class="shot" href="${esc(i.url)}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-        <img src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="" loading="lazy" width="320" height="180">${i.duration ? `<span class="dur">${dur(i.duration)}</span>` : ''}
-      </a>
-      <div>${titleBlock(i)}<p class="meta"><span>${esc(i.meta)}</span><span>조회수 ${fmt(i.score)}회</span><span>${ago(i.published)}</span>${isNew(i)}</p></div>
-    </article>`; }).join('')}</div>`,
+  youtube: items => `<div class="grid">${items.map(i => { const id = (i.url.match(/v=([\w-]{11})/) || [])[1]; return item(i, 'video', `
+      ${link(i, 'shot', `<img src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="" loading="lazy" width="320" height="180">${i.duration ? `<span class="dur">${dur(i.duration)}</span>` : ''}`, ' tabindex="-1" aria-hidden="true"')}
+      <div>${titleBlock(i)}<p class="meta"><span>${esc(i.meta)}</span><span>${scoreText(i, 'youtube')}</span><span>${ago(i.published)}</span>${newTag(i)}${tail(i, 'youtube')}</p></div>`); }).join('')}</div>`,
 
-  github: items => `<ol class="list">${items.map(i => { const [owner, repo] = i.title.split('/'); return `
-    <li class="row"><div class="lead"><img class="avatar" src="https://github.com/${esc(owner)}.png?size=88" alt="" loading="lazy" width="44" height="44"></div>
-      <div><a class="t" href="${esc(i.url)}" target="_blank" rel="noopener"><span class="owner">${esc(owner)} / </span>${esc(repo)}</a>
-      ${(i.meta_ko || i.meta) ? `<p class="desc">${esc(i.meta_ko || i.meta)}</p>` : ''}</div></li>`; }).join('')}</ol>`,
+  github: items => `<ol class="list">${items.map(i => { const [owner, repo] = i.title.split('/'); return item(i, 'row', `
+      <div class="lead"><img class="avatar" src="https://github.com/${esc(owner)}.png?size=88" alt="" loading="lazy" width="44" height="44"></div>
+      <div>${link(i, 't', `<span class="owner">${esc(owner)} / </span>${esc(repo)}`)}
+      ${(i.meta_ko || i.meta) ? `<p class="desc">${esc(i.meta_ko || i.meta)}</p>` : ''}<p class="meta"><span>오늘의 트렌딩</span>${tail(i, 'github')}</p></div>`); }).join('')}</ol>`,
 
-  hf: items => `<ol class="list">${items.map(i => `
-    <li class="row"><div class="lead" title="${i.score}명이 추천">${icon(UP)}<b>${fmt(i.score)}</b><span>추천</span></div>
+  hf: items => `<ol class="list">${items.map(i => item(i, 'row', `
+      <div class="lead" style="--c:var(--hf)" title="${i.score}명이 추천">${icon(UP)}<b>${fmt(i.score)}</b><span>추천</span></div>
       <div>${titleBlock(i)}${(i.meta_ko || i.meta) ? `<p class="desc">${esc(i.meta_ko || i.meta)}</p>` : ''}
-      <p class="meta"><span>${ago(i.published)}</span>${isNew(i)}</p></div></li>`).join('')}</ol>`,
+      <p class="meta"><span>${ago(i.published)}</span>${newTag(i)}${tail(i, 'hf')}</p></div>`)).join('')}</ol>`,
 
-  hn: items => `<ol class="list">${items.map(i => { const [comments, author] = (i.meta || '').split(' · '); return `
-    <li class="row"><div class="lead">${icon(UP)}<b>${fmt(i.score)}</b><span>포인트</span></div>
-      <div>${titleBlock(i)}<p class="meta"><span>${esc(host(i.url))}</span>${comments ? `<span>댓글 ${esc(comments.replace(/\D/g, ''))}개</span>` : ''}<span>${ago(i.published)}</span>${isNew(i)}</p></div></li>`; }).join('')}</ol>`,
+  hn: items => `<ol class="list">${items.map(i => { const comments = (i.meta || '').split(' · ')[0]; return item(i, 'row', `
+      <div class="lead" style="--c:var(--hn)">${icon(UP)}<b>${fmt(i.score)}</b><span>포인트</span></div>
+      <div>${titleBlock(i)}<p class="meta"><span>${esc(host(i.url))}</span>${comments ? `<span>댓글 ${esc(comments.replace(/\D/g, ''))}개</span>` : ''}<span>${ago(i.published)}</span>${newTag(i)}${tail(i, 'hn')}</p></div>`); }).join('')}</ol>`,
 
-  geeknews: items => `<ol class="list">${items.map((i, n) => `
-    <li class="row"><div class="lead"><span class="rank">${n + 1}</span></div>
-      <div>${titleBlock(i)}<p class="meta"><span>${ago(i.published)}</span>${isNew(i)}</p></div></li>`).join('')}</ol>`,
+  geeknews: items => `<ol class="list">${items.map((i, n) => item(i, 'row', `
+      <div class="lead"><span class="rank">${n + 1}</span></div>
+      <div>${titleBlock(i)}<p class="meta"><span>${ago(i.published)}</span>${newTag(i)}${tail(i, 'geeknews')}</p></div>`)).join('')}</ol>`,
 };
 
-let cur, data, loadedAt = 0;
-try { cur = localStorage.getItem('tab'); } catch {}
+// 소스가 섞인 목록 (추천·보관함·최근 본 항목)
+const mixed = entries => `<ol class="list">${entries.map(({ i, key, why, when }) => { const m = SRC[key] || {}; return item(i, 'row', `
+      <div class="lead"><span class="src" style="--c:${m.c}" title="${esc(m.label)}">${icon(m.icon || '')}</span></div>
+      <div>${titleBlock(i)}<p class="meta"><span>${esc(m.label)}</span>${why ? `<span class="why">${esc(why)}</span>` : ''}${scoreText(i, key) ? `<span>${scoreText(i, key)}</span>` : ''}${when ? `<span>${esc(when)}</span>` : i.published ? `<span>${ago(i.published)}</span>` : ''}${tail(i, key)}</p></div>`); }).join('')}</ol>`;
+
+// 추천: 보거나 보관한 항목의 단어와 자주 보는 소스를 점수로 매겨, 아직 안 본 항목을 고른다.
+const STOP = new Set('the and for with you your how what this that from are was were new using use into about why its can will not all one more than just our his her they them get has have had who now out via top best make made like over after when what\'s 있는 하는 위한 대한 이제 그리고 방법 이렇게 정말 모든 우리 당신 합니다 입니다 있습니다 됩니다 하기 하고 에서 으로 가능한 통해 위해 기반 사용 제공 대해 같은 경우 지원 다양한 새로운 최신 없는 않는 있도록 하는지 무엇 어떻게 왜냐 그것 이것 매우 가장 더욱 함께 이상 이후 이전 하나 여러'.split(' '));
+const words = t => [...new Set((String(t || '').toLowerCase().match(/[a-z][a-z0-9+#.-]{2,}|[가-힣]{2,}/g) || []).map(w => w.replace(/[.-]+$/, '')).filter(w => w.length > 2 || /[가-힣]/.test(w)).filter(w => !STOP.has(w)))];
+const textOf = (i, key) => [i.title, i.title_ko, key === 'github' || key === 'hf' ? (i.meta_ko || i.meta) : ''].join(' ');
+
+function recommend() {
+  const all = data.sources.flatMap(s => s.items.map((i, n) => ({ i, key: s.key, rank: n, len: s.items.length })));
+  const fresh = all.filter(x => !isSeen(x.i.url) && !isSaved(x.i.url));
+  const profile = new Map(), pref = {};
+  const add = (i, key, w) => { words(textOf(i, key)).forEach(t => profile.set(t, (profile.get(t) || 0) + w)); pref[key] = (pref[key] || 0) + w; };
+  seen.forEach(s => add(s, s.key, 1 / (1 + (Date.now() - s.at) / 6048e5))); // 1주 지나면 절반
+  saved.forEach(s => add(s, s.key, 3));
+  const total = Object.values(pref).reduce((a, b) => a + b, 0);
+  if (!total) { // 기록이 없으면 소스별 인기 항목
+    return fresh.filter(x => x.rank < 3).sort((a, b) => a.rank - b.rank).map(x => ({ ...x, why: `${SRC[x.key].label} 인기 ${x.rank + 1}위` }));
+  }
+  const scored = fresh.map(x => {
+    let best = '', bestW = 0, sum = 0;
+    words(textOf(x.i, x.key)).forEach(t => { const w = profile.get(t) || 0; sum += w; if (w > bestW) { bestW = w; best = t; } });
+    return { ...x, s: sum + 1.5 * (pref[x.key] || 0) / total + 0.8 * (1 - x.rank / x.len), why: best ? `‘${best}’ 관련` : `${SRC[x.key].label} 인기` };
+  }).sort((a, b) => b.s - a.s);
+  const per = {}, out = []; // 한 소스가 다 차지하지 않게 소스당 최대 6개
+  for (const x of scored) { if ((per[x.key] = (per[x.key] || 0) + 1) <= 6) out.push(x); if (out.length >= 20) break; }
+  return out;
+}
+
+const VIEWS = {
+  rec: () => {
+    const recs = recommend(), cold = !seen.length && !saved.length;
+    return `<p class="intro">${cold ? '아직 본 기록이 없어 소스별 인기 항목을 보여드립니다. 항목을 열어 보거나 보관하면 그 주제 위주로 골라 드립니다.' : '보거나 보관한 항목과 비슷한 주제 중 아직 안 본 것을 골랐습니다.'}</p>`
+      + (recs.length ? mixed(recs) : '<div class="state"><h2>지금 추천할 새 항목이 없습니다</h2><p>새 글이 모이면 다시 골라 드립니다.</p></div>');
+  },
+  saved: () => {
+    const savedPart = saved.length
+      ? mixed(saved.map(s => ({ i: s, key: s.key, when: `${ago(new Date(s.savedAt).toISOString())} 보관` })))
+      : '<div class="state"><h2>보관한 항목이 없습니다</h2><p>항목 오른쪽의 책갈피 버튼을 누르면 여기에 모입니다. 피드에서 사라져도 보관함에는 남습니다.</p></div>';
+    const recent = seen.slice(0, 30);
+    return `<h2 class="section">보관한 항목 ${saved.length}개</h2>${savedPart}`
+      + `<h2 class="section">최근 본 항목</h2>` + (recent.length
+        ? mixed(recent.map(s => ({ i: s, key: s.key, when: `${ago(new Date(s.at).toISOString())} 봄` })))
+        : '<div class="state"><p>링크를 열면 여기에 기록됩니다.</p></div>');
+  },
+};
+
+let cur, data, loadedAt = 0, byUrl = new Map();
+cur = store.get('tab', null);
+
+function renderTabs() {
+  const recCount = data ? recommend().length : 0;
+  const tabs = [
+    { key: 'rec', ...MINE.rec, count: recCount },
+    ...data.sources.map(s => ({ key: s.key, ...(SRC[s.key] || { label: s.name, c: 'var(--accent)' }), count: s.items.length })),
+    { key: 'saved', ...MINE.saved, count: saved.length, mine: true },
+  ];
+  $('#tabs').innerHTML = tabs.map(t => `<button class="tab${t.mine ? ' mine' : ''}" role="tab" type="button" data-k="${t.key}" aria-selected="${t.key === cur}" style="--c:${t.c}">${t.icon ? icon(t.icon) : ''}${esc(t.label)}<span class="count">${t.count}</span></button>`).join('');
+}
 
 function show() {
   document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.k === cur));
+  const sel = document.querySelector('.tab[aria-selected="true"]'); // 좁은 화면에서 선택 탭이 가려지지 않게
+  if (sel) sel.parentElement.scrollLeft = sel.offsetLeft - (sel.parentElement.clientWidth - sel.offsetWidth) / 2;
+  if (VIEWS[cur]) { $('#list').innerHTML = VIEWS[cur](); return; }
   const s = data.sources.find(x => x.key === cur);
   const name = (SRC[s.key] || {}).label || s.name;
   $('#list').innerHTML = s.error && !s.items.length
     ? `<div class="state"><h2>${esc(name)}을(를) 불러오지 못했습니다</h2><p>다음 자동 갱신 때 다시 시도합니다. 다른 탭은 정상입니다.</p><small>${esc(s.error)}</small></div>`
     : s.items.length ? (RENDER[s.key] || RENDER.geeknews)(s.items)
-    : `<div class="state"><h2>새로 올라온 항목이 없습니다</h2><p>다음 갱신 때 다시 확인합니다.</p></div>`;
+    : '<div class="state"><h2>새로 올라온 항목이 없습니다</h2><p>다음 갱신 때 다시 확인합니다.</p></div>';
 }
 
 function render(d) {
   data = d; loadedAt = Date.now();
-  const at = new Date(d.generated_at);
+  byUrl = new Map(d.sources.flatMap(s => s.items.map(i => [i.url, { i, key: s.key }])));
   const u = $('#updated');
   u.textContent = `${ago(d.generated_at)} 업데이트됨, 8시간마다 자동으로 새로 모읍니다`;
-  u.title = at.toLocaleString('ko-KR');
+  u.title = new Date(d.generated_at).toLocaleString('ko-KR');
   $('#notice').innerHTML = d.translate_error ? '<p class="notice">번역 서버가 잠시 응답하지 않아 일부 항목이 원문으로 표시됩니다. 다음 갱신 때 다시 번역합니다.</p>' : '';
-  if (!d.sources.some(s => s.key === cur)) cur = d.sources[0].key;
-  $('#tabs').innerHTML = d.sources.map(s => { const m = SRC[s.key] || {}; return `
-    <button class="tab" role="tab" type="button" data-k="${s.key}" style="--c:${m.c || 'var(--accent)'}">${m.icon ? icon(m.icon) : ''}${esc(m.label || s.name)}<span class="count">${s.items.length}</span></button>`; }).join('');
-  show();
+  if (!VIEWS[cur] && !d.sources.some(s => s.key === cur)) cur = 'rec';
+  renderTabs(); show();
 }
 
 function load() {
@@ -213,9 +313,38 @@ function load() {
     .finally(() => btn.removeAttribute('aria-busy'));
 }
 
+let toastTimer;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 1800); }
+const find = u => byUrl.get(u) || (x => x && { i: x, key: x.key })(saved.find(s => s.url === u) || seen.find(s => s.url === u));
+
+// 링크를 열면 "봤음"으로 기록 (가운데 버튼 클릭 포함)
+function markSeen(e) {
+  const a = e.target.closest('a[data-u]'); if (!a) return;
+  const f = find(a.dataset.u); if (!f) return;
+  seen = [{ ...snap(f.i, f.key), at: Date.now() }, ...seen.filter(s => s.url !== f.i.url)].slice(0, 300);
+  store.set('seen', seen);
+  a.closest('[data-item]')?.classList.add('seen');
+}
+document.addEventListener('click', markSeen);
+document.addEventListener('auxclick', e => { if (e.button === 1) markSeen(e); });
+
+// 보관 버튼
+$('#list').addEventListener('click', e => {
+  const b = e.target.closest('.save'); if (!b) return;
+  const u = b.dataset.save, f = find(u); if (!f) return;
+  const on = !isSaved(u);
+  saved = on ? [{ ...snap(f.i, f.key), savedAt: Date.now() }, ...saved] : saved.filter(s => s.url !== u);
+  store.set('saved', saved);
+  toast(on ? '보관함에 저장했습니다' : '보관함에서 뺐습니다');
+  if (cur === 'saved' || cur === 'rec') show();
+  else document.querySelectorAll(`.save[data-save="${CSS.escape(u)}"]`).forEach(x => { x.setAttribute('aria-pressed', on); x.setAttribute('aria-label', on ? '보관함에서 빼기' : '보관함에 저장'); x.title = x.getAttribute('aria-label'); });
+  renderTabs();
+});
+
 $('#tabs').addEventListener('click', e => {
   const b = e.target.closest('.tab'); if (!b) return;
-  cur = b.dataset.k; try { localStorage.setItem('tab', cur); } catch {}
+  cur = b.dataset.k; store.set('tab', cur);
+  if (cur === 'rec') renderTabs(); // 추천 수는 본 기록에 따라 바뀐다
   show(); window.scrollTo({ top: 0 });
 });
 $('#tabs').addEventListener('keydown', e => { // 좌우 화살표로 탭 이동
