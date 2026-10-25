@@ -157,8 +157,26 @@ def translate(data):
     key = os.environ.get("GEMINI_API_KEY")
     if not key:
         raise RuntimeError("GEMINI_API_KEY secret not set")
-    todo = [(i, k) for s in data["sources"] for i in s["items"] for k in TRANSLATE[s["key"]]
-            if i[k] and not HANGUL.search(i[k])]
+    # 지난 배포의 번역을 재사용해 새 항목만 보낸다. 매번 전부 보내면 무료 한도(429)에 걸린다.
+    owner, _, repo = os.environ.get("GITHUB_REPOSITORY", "CodingRyong/ai-trend").partition("/")
+    prev = {}
+    try:
+        for s in get_json(f"https://{owner.lower()}.github.io/{repo}/data.json")["sources"]:
+            for i in s["items"]:
+                prev.update({i[k]: i[k + "_ko"] for k in ("title", "meta") if i.get(k + "_ko")})
+    except Exception:
+        pass  # 첫 배포·사이트 장애면 전부 새로 번역
+    todo = []
+    for s in data["sources"]:
+        for i in s["items"]:
+            for k in TRANSLATE[s["key"]]:
+                if not i[k] or HANGUL.search(i[k]):
+                    continue
+                if i[k] in prev:
+                    i[k + "_ko"] = prev[i[k]]
+                else:
+                    todo.append((i, k))
+    print(f"translate: {len(todo)} new strings, {len(prev)} cached")
     for n in range(0, len(todo), 30):  # 묶음이 크면 느리고(타임아웃) 길이 불일치도 잦다
         chunk = todo[n:n + 30]
         prompt = ("다음 JSON 문자열 배열을 자연스러운 한국어로 번역해, 같은 길이·같은 순서의 JSON 문자열 배열만 출력하라. "
