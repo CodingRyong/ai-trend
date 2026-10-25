@@ -13,7 +13,7 @@ GitHub Actions가 8시간마다 `fetch.py`를 실행해 `docs/data.json`을 만�
 2. Settings → Pages → Source가 **GitHub Actions**인지 확인
 3. Actions 탭에서 `fetch` 워크플로를 수동 실행(Run workflow)하면 바로 반영
 
-YouTube는 채널 RSS를 쓰므로 API 키가 필요 없다.
+YouTube는 `YOUTUBE_API_KEY` 시크릿(YouTube Data API v3 키)으로 채널 업로드 목록을 읽는다. 채널 RSS는 2026-10-24부터 막혔다.
 
 ## 채널 추가·삭제
 

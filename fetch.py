@@ -66,26 +66,38 @@ CHANNELS = {
     "coohde": "UCvc8kv-i5fvFTJBFAk6n1SA",
     "dongbinna": "UChflhu32f5EUHlY7_SetNWw",
 }
-YT_NS = {"a": "http://www.w3.org/2005/Atom", "yt": "http://www.youtube.com/xml/schemas/2015", "m": "http://search.yahoo.com/mrss/"}
+def _secs(iso):  # ISO 8601 "PT1H2M3S" -> 초. 라이브(P0D) 등 비정형은 0
+    m = re.fullmatch(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", iso)
+    return sum(int(x or 0) * k for x, k in zip(m.groups(), (3600, 60, 1))) if m else 0
 
 
 def youtube():
-    # 채널 RSS에 조회수가 들어 있어 API 키가 필요 없다. 전체 검색은 조회수순이면 예능·주식 영상이 상위라 채널을 고른다.
-    # shortcut: 피드에 영상 길이가 없어 쇼츠를 못 거름, 거슬리면 Data API videos.list로 길이 확인 추가
-    since = days_ago(14)
-    out = []
-    for handle, cid in CHANNELS.items():
+    # 채널 RSS는 2026-10-24부터 404라 Data API로 각 채널 업로드 목록을 읽는다 (채널당 1 unit, 하루 약 120 units).
+    # 전체 검색은 조회수순이면 예능·주식 영상이 상위라 채널을 직접 고른다.
+    key = os.environ.get("YOUTUBE_API_KEY")
+    if not key:
+        raise RuntimeError("YOUTUBE_API_KEY secret not set")
+    base, since, ids, last_err = "https://www.googleapis.com/youtube/v3/", days_ago(14), [], None
+    for cid in CHANNELS.values():
+        q = urllib.parse.urlencode({"part": "contentDetails", "playlistId": "UU" + cid[2:], "maxResults": 10, "key": key})
         try:
-            root = ET.fromstring(get("https://www.youtube.com/feeds/videos.xml?channel_id=" + cid))
-        except Exception:
-            continue  # 채널 하나가 죽어도 나머지는 보여준다
-        for e in root.findall("a:entry", YT_NS):
-            pub = e.findtext("a:published", "", YT_NS)
-            if pub < since:
+            ids += [x["contentDetails"]["videoId"] for x in get_json(base + "playlistItems?" + q)["items"]
+                    if x["contentDetails"].get("videoPublishedAt", "") >= since]
+        except Exception as e:  # 채널 하나가 죽어도 나머지는 보여준다
+            last_err = e
+    if not ids and last_err:
+        raise last_err  # 전부 실패면 진짜 원인(키 오류 등)을 화면에 보여준다
+    out = []
+    for n in range(0, len(ids), 50):
+        q = urllib.parse.urlencode({"part": "snippet,statistics,contentDetails", "id": ",".join(ids[n:n + 50]), "key": key})
+        for v in get_json(base + "videos?" + q)["items"]:
+            secs = _secs(v["contentDetails"]["duration"])
+            if secs < 180:  # 쇼츠(최대 3분)·라이브 제외
                 continue
-            stats = e.find("m:group/m:community/m:statistics", YT_NS)
-            out.append(item(e.findtext("a:title", "", YT_NS), "https://www.youtube.com/watch?v=" + e.findtext("yt:videoId", "", YT_NS),
-                            int(stats.get("views", 0)) if stats is not None else 0, e.findtext("a:author/a:name", handle, YT_NS), pub))
+            it = item(v["snippet"]["title"], "https://www.youtube.com/watch?v=" + v["id"], int(v["statistics"].get("viewCount", 0)),
+                      v["snippet"]["channelTitle"], v["snippet"]["publishedAt"])
+            it["duration"] = secs
+            out.append(it)
     return sorted(out, key=lambda x: -x["score"])[:30]
 
 
@@ -155,7 +167,7 @@ def translate(data):
                            "generationConfig": {"responseMimeType": "application/json", "temperature": 0.2}}).encode()
         req = urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
                                      data=body, headers={**UA, "Content-Type": "application/json", "x-goog-api-key": key})
-        for attempt in (1, 2):  # 타임아웃·길이 불일치는 한 번 더 시도
+        for attempt in range(3):  # 503 과부하·타임아웃·길이 불일치는 쉬었다가 다시 시도
             try:
                 with urllib.request.urlopen(req, timeout=240) as r:
                     out = json.loads(json.load(r)["candidates"][0]["content"]["parts"][0]["text"])
@@ -165,6 +177,7 @@ def translate(data):
             except Exception:
                 if attempt == 2:
                     raise
+                time.sleep(30 * (attempt + 1))
         for (i, k), ko in zip(chunk, out):
             if ko and ko != i[k]:  # 원문 그대로면 중복 표시하지 않는다
                 i[k + "_ko"] = ko
@@ -197,6 +210,7 @@ def main():
 
 
 if __name__ == "__main__":
-    assert AI_KW.search("AI가 바꾸는 개발") and not AI_KW.search("Email 보내기")  # 자가검사
+    assert _secs("PT1H2M3S") == 3723 and _secs("PT45S") == 45 and _secs("P0D") == 0  # 자가검사
+    assert AI_KW.search("AI가 바꾸는 개발") and not AI_KW.search("Email 보내기")
     assert HANGUL.search("AI 강의") and not HANGUL.search("AI lecture")
     main()

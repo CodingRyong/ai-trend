@@ -23,6 +23,7 @@ jobs:
       - run: python3 fetch.py
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
       - uses: actions/upload-pages-artifact@v5
         with:
           path: docs
